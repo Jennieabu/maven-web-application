@@ -1,0 +1,86 @@
+pipeline{
+  agent any
+  tools {
+    maven 'maven3.9.6'
+  }
+  stages{
+    stage('1clonecode'){
+      steps{
+        git "https://github.com/Jennieabu/maven-web-application"
+      }
+    }
+    stage('2mavenBuild'){
+    steps{
+          sh "echo 'running JUnit-test-cases' "
+          sh "echo 'testing must passed to create artifacts ' "
+          sh "mvn clean package" 
+    }
+  }
+  stage('3CodeQuality'){
+    steps{
+          //sh "mvn sonar:sonar"
+          sh "echo CodeQualityAnalysis completed" 
+  }
+}
+stage('4UploadArtifacts'){
+    steps{
+          //sh "mvn deploy" 
+          sh "echo artifacts uploaded successfully"
+          sh "echo I am now a Build and Release Engineer"
+          sh "echo Build and release completed"
+    }
+  }
+  stage('5deploy2UAT'){
+    steps{
+          sh "echo Deployment is ready for the client review"
+          deploy adapters: [tomcat9(credentialsId: 'c06ac888-13a0-4425-a40f-1582c08f09a1', path: '', url: 'http://35.182.244.93:8088/')], contextPath: null, war: 'target/*war'
+  }
+  }
+  stage('6manualApproval'){
+    steps{
+      sh "echo Review the application and confirm its performance within 5 hours"
+      timeout(time:5, unit:'HOURS') {
+       input message: 'Application ready for deployment, Please review and approve' 
+  }
+}
+}
+stage('7deploy2prod'){
+    steps{
+          sh "echo application reviewed ,approved and ready for the market"
+          deploy adapters: [tomcat9(credentialsId: 'c06ac888-13a0-4425-a40f-1582c08f09a1', path: '', url: 'http://35.182.244.93:8088/')], contextPath: null, war: 'target/*war'
+  }
+}
+}
+post{
+    always{
+      emailext body: '''Hi,
+
+Build status.
+
+Jenny Consulting.
+Tel: +1 519 722 6400''', recipientProviders: [developers(), requestor(), buildUser()], subject: 'Build status', to: 'jo.akpamu@gmail.com'
+
+    }
+  success {
+     emailext body: '''Hi,
+
+Build successful.
+
+Jenny Consulting.
+Tel: +1 519 722 6400''', recipientProviders: [developers(), requestor(), buildUser()], subject: 'Build status', to: 'jo.akpamu@gmail.com'
+
+  }
+  failure{
+    emailext body: '''Hi,
+
+Build failed.
+
+Jenny Consulting.
+Tel: +1 519 722 6400''', recipientProviders: [developers(), requestor(), buildUser()], subject: 'Build status', to: 'jo.akpamu@gmail.com'
+
+  }
+  }
+}
+
+
+
